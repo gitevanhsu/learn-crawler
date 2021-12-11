@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 def main(url):
     school_count = dict() # 用字典將使用者(學校)出現次數儲存
     num = 0
-    
+
     while True:
         error_time = 0
         num += 1
@@ -35,31 +35,3 @@ def main(url):
 url = 'https://www.dcard.tw/f/mood/p/234511181'
 if __name__ == '__main__':
     main(url)
-
-# use find & find_all fountion
-# spans = soup.find_all('span', class_='listTitle')
-# for span in spans:
-#     href = span.find('a').get('href')
-#     url = root_url + href
-#     if '796-59l9' == href:
-#         break
-#     print(f'{span.text}\n{url}\n')
-
-
-# use select fountion
-# for span in soup.select('span.listTitle'):
-#     href = span.find('a').get('href')
-#     url = root_url + href
-#     if '796-59l9' == href:
-#         break
-#     print(f'{span.text}\n{url}\n')
-
-
-# use CSS selector
-# for span in soup.select('#list .listTitle'): 
-#     # #+id名、class 搭配. 用空格分開
-#     href = span.find('a').get('href')
-#     url = root_url + href
-#     if '796-59l9' == href:
-#         break
-#     print(f'{span.text}\n{url}\n')
