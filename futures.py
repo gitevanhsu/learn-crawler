@@ -2,6 +2,10 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from pprint import pprint
+import threading as td
+import json
+import time
+
 
 def crawl(date):
     print('crawling', date.strftime('%y/%m/%d'))
@@ -59,16 +63,37 @@ def crawl(date):
         else:
             data[product][who] = contents
 
-    print('臺股期貨,外資,未平倉多空淨額:', data['臺股期貨']['外資']['未平倉多空淨額'])
-    # pprint(data)
     return data
 
-
-
+path = 'downloads/json_futures/'
 date = datetime.today()
+
+
+start = time.time()
 while True:
-    crawl(date)
     date = date - timedelta(days=1)
     if date < datetime.today() - timedelta(days=30):
         break
+    data = crawl(date)
+    
+    if data == None:
+        print(date.strftime('%Y/%m/%d'),'no future data')
+        continue
+
+    json_data = json.dumps(data, ensure_ascii=False, indent=1)
+    filename = '{}future_{}.json'.format( path, date.strftime('%Y%m%d'))
+    # 檔名日期加上斜線會出現error
+
+    with open(filename,'w') as f:
+        f.write(json_data)
+        print('save future json file.')
+
+    print(json_data)
+
+
+end = time.time()
+print(f'下載資料共花費{end - start}秒')
+
+
+
 
