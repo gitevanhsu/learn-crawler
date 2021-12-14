@@ -2,13 +2,13 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from pprint import pprint
-import threading as td
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
 import json
 import time
 
 
 def crawl(date):
-    print('crawling', date.strftime('%y/%m/%d'))
+    print('crawling', date.strftime('%y-%m-%d'))
     url = 'https://www.taifex.com.tw/cht/3/futContractsDate'
     sorce = f'queryDate={date.year}%2F{date.month}%2F{date.day}'
     data=[] # 用於儲存資料
@@ -23,7 +23,7 @@ def crawl(date):
         table = soup.find('table', class_='table_f')
         trs = table.find_all('tr')
     except AttributeError:
-        print('No data for', date.strftime('%y/%m/%d'))
+        print('No data for', date.strftime('%y-%m-%d'))
         return
 
     rows = trs[3:]
@@ -63,36 +63,48 @@ def crawl(date):
         else:
             data[product][who] = contents
 
-    return data
-
-path = 'downloads/json_futures/'
-date = datetime.today()
+    return data, date
 
 
-start = time.time()
-while True:
-    date = date - timedelta(days=1)
-    if date < datetime.today() - timedelta(days=30):
-        break
-    data = crawl(date)
+
+def save_future(data, date):
     
-    if data == None:
-        print(date.strftime('%Y/%m/%d'),'no future data')
-        continue
-
     json_data = json.dumps(data, ensure_ascii=False, indent=1)
-    filename = '{}future_{}.json'.format( path, date.strftime('%Y%m%d'))
-    # 檔名日期加上斜線會出現error
+    path = 'downloads/json_futures/'
+    filename = '{}future_{}.json'.format(path, date.strftime('%Y-%m-%d'))
 
     with open(filename,'w') as f:
         f.write(json_data)
-        print('save future json file.')
-
-    print(json_data)
+        print('save future json file {}'.format(date.strftime('%Y-%m-%d')))    
 
 
-end = time.time()
-print(f'下載資料共花費{end - start}秒')
+def main():
+    start = time.time()
+    date = datetime.today()
+    futures =[]
+
+    with ProcessPoolExecutor(max_workers=16) as executor:
+        while True:
+            future = executor.submit(crawl, date)
+            futures.append(future)
+
+            date = date - timedelta(days=1)
+            if date < datetime.today() - timedelta(days=730):
+                break
+
+        for future in as_completed(futures):
+            if future.result() == None:
+                print(date.strftime('%Y-%m-%d'),'no future data')
+            else:
+                data ,date = future.result()
+                save_future(data, date)
+
+
+    end = time.time()
+    print(f'下載資料共花費{end - start}秒')
+
+if __name__ == "__main__":
+    main()
 
 
 
